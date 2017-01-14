@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/android.tinybeacon.iml" filepath="$PROJECT_DIR$/android.tinybeacon.iml" />
+      <module fileurl="file://$PROJECT_DIR$/tinybeacon/tinybeacon.iml" filepath="$PROJECT_DIR$/tinybeacon/tinybeacon.iml" />
+    </modules>
+  </component>
+</project>
