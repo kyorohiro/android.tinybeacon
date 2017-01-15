@@ -4,18 +4,20 @@ import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by kyorohiro on 2016/02/16.
  */
 public class TinyIBeaconPacket {
-    static final int PROXIMITY_NONE = 0;
-    static final int PROXIMITY_IMMEDIATE = 1;
-    static final int PROXIMITY_NEAR = 2;
-    static final int PROXIMITY_FAR = 3;
-    static final int PROXIMITY_UNKNOWN = 4;
+    static public final int PROXIMITY_NONE = 0;
+    static public final int PROXIMITY_IMMEDIATE = 1;
+    static public final int PROXIMITY_NEAR = 2;
+    static public final int PROXIMITY_FAR = 3;
+    static public final int PROXIMITY_UNKNOWN = 4;
 
-    static int getProximity(TinyAdPacket packet, double rssi, int currentState) {
+    static public int getProximity(TinyAdPacket packet, double rssi, int currentState) {
         double d = distance(packet, rssi);
         if(d < 0.25) {
             return PROXIMITY_IMMEDIATE;
@@ -38,7 +40,7 @@ public class TinyIBeaconPacket {
     //
     // TODO create iBeacon class & functionry method
     //
-    static boolean isIBeacon(TinyAdPacket packet) {
+    static public boolean isIBeacon(TinyAdPacket packet) {
         if(packet.getAdType() != TinyAdPacket.ADTYPE_MANUFACTURE_SPECIFIC) {
             return false;
         }
@@ -58,7 +60,7 @@ public class TinyIBeaconPacket {
     //
     // TODO create iBeacon class & functionry method
     //
-    static byte[] makeIBeaconAdvertiseData(byte[] uuid, int major, int minor, int txPower) {
+    static public byte[] makeIBeaconAdvertiseData(byte[] uuid, int major, int minor, int txPower) {
         byte[] cont = new byte[0x1a-2];
 
         //
@@ -94,42 +96,49 @@ public class TinyIBeaconPacket {
     // 100cm a
     // 200cm a-6
     // 400cm a-12
-    static double distance(TinyAdPacket packet, double rssi) {
-        return Math.pow(10.0, (getCalibratedRSSIAsIBeacon(packet)-rssi)/20.0 );
+    static public double distance(TinyAdPacket packet, double rssi) {
+        return distance (getCalibratedRSSIAsIBeacon(packet),-rssi);
     }
 
-    static int getIdentifierAsIBeacon_00(TinyAdPacket packet) {
+    static public double distance(int txPower, double rssi) {
+        return Math.pow(10.0, (txPower-rssi)/20.0 );
+    }
+
+    static public int getIdentifierAsIBeacon_00(TinyAdPacket packet) {
         return 0xff & packet.getContent()[2];
     }
 
-    static int getIdentifierAsIBeacon_01(TinyAdPacket packet) {
+    static public int getIdentifierAsIBeacon_01(TinyAdPacket packet) {
         return 0xff & packet.getContent()[3];
     }
 
-    static byte[] getUUIDAsIBeacon(TinyAdPacket packet) {
+    static public byte[] getUUIDAsIBeacon(TinyAdPacket packet) {
         byte[] cont = packet.getContent();
         byte[] ret = new byte[16];
         System.arraycopy(cont,4,ret,0,ret.length);
         return ret;
     }
 
-    static int getMajorAsIBeacon(TinyAdPacket packet) {
+    static public int getMajorAsIBeacon(TinyAdPacket packet) {
         byte[] cont = packet.getContent();
         return ByteBuffer.wrap(cont,20,2).getShort();
     }
 
-    static int getMinorAsIBeacon(TinyAdPacket packet) {
+    static public int getMinorAsIBeacon(TinyAdPacket packet) {
         byte[] cont = packet.getContent();
         return ByteBuffer.wrap(cont,22,2).getShort();
     }
 
 
-    static int getCalibratedRSSIAsIBeacon(TinyAdPacket packet) {
+    static public int getCalibratedRSSIAsIBeacon(TinyAdPacket packet) {
         return packet.getContent()[24];
     }
 
-    static String getUUIDHexStringAsIBeacon(TinyAdPacket packet) {
-        byte[] cont = getUUIDAsIBeacon(packet);
+    static public String getUUIDHexStringAsIBeacon(TinyAdPacket packet) {
+        return getUUIDHexStringAsIBeacon(getUUIDAsIBeacon(packet));
+    }
+
+    static public String getUUIDHexStringAsIBeacon(byte[] cont) {
         StringBuilder builder = new StringBuilder();
         for(byte c : cont) {
             if(0xF < (c&0xff)) {
@@ -141,4 +150,43 @@ public class TinyIBeaconPacket {
         }
         return builder.toString();
     }
+
+    static public byte[] getUUIDBytesAsIBeacon(String uuid) {
+        byte[] ret = new byte[16];
+        StringBuilder builder = new StringBuilder();
+        for(int i=0,j=0;j<uuid.length()&& i<ret.length;j+=2) {
+            if(vMap.containsKey(uuid.charAt(j))) {
+                ret[i] = (byte) (0x0f * vMap.get(uuid.charAt(j) + uuid.charAt(j + 1)));
+                i++;
+            } else {
+                j++;
+            }
+        }
+        return ret;
+    }
+
+    static private Map<Character,Integer> vMap = new HashMap<Character,Integer>(){{
+        put('0',0);
+        put('1',1);
+        put('2',2);
+        put('3',3);
+        put('4',4);
+        put('5',5);
+        put('6',6);
+        put('7',7);
+        put('8',8);
+        put('9',9);
+        put('a',10);
+        put('b',11);
+        put('c',12);
+        put('d',13);
+        put('e',14);
+        put('f',15);
+        put('A',10);
+        put('B',11);
+        put('C',12);
+        put('D',13);
+        put('E',14);
+        put('F',15);
+    }};
 }
