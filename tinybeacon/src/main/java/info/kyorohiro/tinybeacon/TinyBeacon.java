@@ -14,6 +14,7 @@ import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -51,7 +52,12 @@ public class TinyBeacon {
         mAdvertiser = adapter.getBluetoothLeAdvertiser();
         AdvertiseSettings.Builder builder = new AdvertiseSettings.Builder();
         AdvertiseData.Builder dataBuilder = new AdvertiseData.Builder();
-        dataBuilder.addManufacturerData(TinyAdPacket.ADTYPE_MANUFACTURE_SPECIFIC, TinyIBeaconPacket.makeIBeaconAdvertiseData(uuid, major, minor, txPower));
+        dataBuilder.setIncludeTxPowerLevel(false);
+        dataBuilder.setIncludeDeviceName(false);
+        dataBuilder.addManufacturerData(
+                //TinyAdPacket.ADTYPE_MANUFACTURE_SPECIFIC,
+                0x4c,
+                TinyIBeaconPacket.makeIBeaconAdvertiseData(uuid, major, minor, txPower));
 
         try {
             mAdvertiser.startAdvertising(builder.build(), dataBuilder.build(), mAdvertiserCallback = new android.bluetooth.le.AdvertiseCallback() {

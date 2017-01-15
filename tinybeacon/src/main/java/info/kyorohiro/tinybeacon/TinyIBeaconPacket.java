@@ -61,26 +61,27 @@ public class TinyIBeaconPacket {
     // TODO create iBeacon class & functionry method
     //
     static public byte[] makeIBeaconAdvertiseData(byte[] uuid, int major, int minor, int txPower) {
-        byte[] cont = new byte[0x1a-2];
-
+        byte[] cont = new byte[0x1a-1-2];
         //
         // 004c is apple
-        cont[0] = 0x4C;
-        cont[1] = 0x00;
+        //
+        //
+        //cont[0] = 0x4C;
+        //cont[1] = 0x00;
         // indicator
-        cont[2] = 0x02;
-        cont[3] = 0x15;
+        cont[2-2] = 0x02;
+        cont[3-2] = 0x15;
         // uuid
-        System.arraycopy(uuid,0,cont,4,16);
+        System.arraycopy(uuid,0,cont,4-2,16);
         //
         //major
         ByteBuffer majorBuffer = ByteBuffer.allocate(2).putShort((short)major);
-        cont[20] = majorBuffer.get(1);
-        cont[21] = majorBuffer.get(0);
+        cont[20-2] = majorBuffer.get(1);
+        cont[21-2] = majorBuffer.get(0);
         ByteBuffer minorBuffer = ByteBuffer.allocate(2).putShort((short)major);
-        cont[22] = minorBuffer.get(1);
-        cont[23] = minorBuffer.get(0);
-        cont[24] = (byte)txPower;
+        cont[22-2] = minorBuffer.get(1);
+        cont[23-2] = minorBuffer.get(0);
+        cont[24-2] = (byte)txPower;
         return cont;
     }
 
@@ -154,10 +155,11 @@ public class TinyIBeaconPacket {
     static public byte[] getUUIDBytesAsIBeacon(String uuid) {
         byte[] ret = new byte[16];
         StringBuilder builder = new StringBuilder();
-        for(int i=0,j=0;j<uuid.length()&& i<ret.length;j+=2) {
+        for(int i=0,j=0;j<uuid.length()&& i<ret.length;) {
             if(vMap.containsKey(uuid.charAt(j))) {
-                ret[i] = (byte) (0x0f * vMap.get(uuid.charAt(j) + uuid.charAt(j + 1)));
+                ret[i] = (byte) (0x10 * vMap.get(uuid.charAt(j)) + vMap.get(uuid.charAt(j + 1)));
                 i++;
+                j+=2;
             } else {
                 j++;
             }
