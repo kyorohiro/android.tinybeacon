@@ -3,6 +3,10 @@ package info.kyorohiro.tinybeacon;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
+import android.bluetooth.le.AdvertiseCallback;
+import android.bluetooth.le.AdvertiseData;
+import android.bluetooth.le.AdvertiseSettings;
+import android.bluetooth.le.BluetoothLeAdvertiser;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
@@ -23,7 +27,65 @@ public class TinyBeacon {
     private ScanCallback mCurrentScanCallback = null;
     private BluetoothManager mBluetoothManager = null;
     private BluetoothLeScanner mScanner = null;
+    private BluetoothLeAdvertiser mAdvertiser = null;
+    private android.bluetooth.le.AdvertiseCallback mAdvertiserCallback = null;
 
+    // --
+    // Advertiser
+    // --
+    public static class AdvertiseCallbackParam {
+    }
+
+    public static interface AdvertiseCallback {
+        void onStartFailure(int errorCode);
+
+        void onStartSuccess(AdvertiseCallbackParam param);
+    }
+
+    public void startAdvertise(Context context, byte[] uuid, int major, int minor, int txPower, final AdvertiseCallback callback) throws Exception {
+        if (mAdvertiser != null && mAdvertiserCallback != null) {
+            throw new Exception("already run");
+        }
+        mBluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+        BluetoothAdapter adapter = mBluetoothManager.getAdapter();
+        mAdvertiser = adapter.getBluetoothLeAdvertiser();
+        AdvertiseSettings.Builder builder = new AdvertiseSettings.Builder();
+        AdvertiseData.Builder dataBuilder = new AdvertiseData.Builder();
+        dataBuilder.addManufacturerData(TinyAdPacket.ADTYPE_MANUFACTURE_SPECIFIC, TinyIBeaconPacket.makeIBeaconAdvertiseData(uuid, major, minor, txPower));
+
+        try {
+            mAdvertiser.startAdvertising(builder.build(), dataBuilder.build(), mAdvertiserCallback = new android.bluetooth.le.AdvertiseCallback() {
+                @Override
+                public void onStartSuccess(AdvertiseSettings settingsInEffect) {
+                    super.onStartSuccess(settingsInEffect);
+                    callback.onStartSuccess(new AdvertiseCallbackParam());
+                }
+
+                @Override
+                public void onStartFailure(int errorCode) {
+                    super.onStartFailure(errorCode);
+                    callback.onStartFailure(errorCode);
+                }
+            });
+        } catch (Exception e) {
+            callback.onStartFailure(-999);
+        }
+    }
+
+    public void stopAdvertise() {
+        BluetoothLeAdvertiser _advertiser = mAdvertiser;
+        android.bluetooth.le.AdvertiseCallback _advertiserCallback = mAdvertiserCallback;
+        mAdvertiser = null;
+        mAdvertiserCallback = null;
+        if (_advertiser != null && _advertiserCallback != null) {
+            _advertiser.stopAdvertising(_advertiserCallback);
+        }
+    }
+
+
+    // --
+    // Scanner
+    // --
     public void startLescan(Context context) {
         if (mCurrentScanCallback != null) {
             return;
@@ -38,18 +100,20 @@ public class TinyBeacon {
         MyCallback callback = new MyCallback(this);
         final ScanFilter.Builder filterBuilder = new ScanFilter.Builder();
         {
-            byte[] manData = new byte[]{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-            byte[] mask = new byte[]{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+            byte[] manData = new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+            byte[] mask = new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
             filterBuilder.setManufacturerData(76, manData, mask);
         }
-        List l = new LinkedList(){{add(filterBuilder.build());}};
-        mScanner.startScan(l,settingsBuilder.build(), callback);
+        List l = new LinkedList() {{
+            add(filterBuilder.build());
+        }};
+        mScanner.startScan(l, settingsBuilder.build(), callback);
         mCurrentScanCallback = callback;
 
     }
 
     public void stopLescan() {
-        if(mCurrentScanCallback != null) {
+        if (mCurrentScanCallback != null) {
             mScanner.stopScan(mCurrentScanCallback);
             mCurrentScanCallback = null;
         }
@@ -62,7 +126,7 @@ public class TinyBeacon {
     public String getFoundedBeeaconAsJSONText() throws JSONException {
         JSONObject ret = new JSONObject();
         List<JSONObject> t = new LinkedList<JSONObject>();
-        for(TinyBeaconInfo e: mFoundIBeacon) {
+        for (TinyBeaconInfo e : mFoundIBeacon) {
             t.add(e.toJsonString());
         }
         ret.put("founded", new JSONArray(t));
@@ -93,11 +157,11 @@ public class TinyBeacon {
             //android.util.Log.v("beacon", "###SA## scanResult type:" + callbackType + " ,result: " + result.toString());
             long t = TinyBeaconInfo.getTime();//System.currentTimeMillis();
             List<TinyAdPacket> ad = TinyAdPacket.parse(result.getScanRecord().getBytes());
-            for(TinyAdPacket a : ad){
-                if(TinyIBeaconPacket.isIBeacon(a)) {
-                 //   android.util.Log.v("KY", "uuid:" + TinyIBeaconPacket.getUUIDHexStringAsIBeacon(a) + ", major:" + TinyIBeaconPacket.getMajorAsIBeacon(a) + ", minor:" + TinyIBeaconPacket.getMinorAsIBeacon(a) + ",crssi:" + TinyIBeaconPacket.getCalibratedRSSIAsIBeacon(a));
+            for (TinyAdPacket a : ad) {
+                if (TinyIBeaconPacket.isIBeacon(a)) {
+                    //   android.util.Log.v("KY", "uuid:" + TinyIBeaconPacket.getUUIDHexStringAsIBeacon(a) + ", major:" + TinyIBeaconPacket.getMajorAsIBeacon(a) + ", minor:" + TinyIBeaconPacket.getMinorAsIBeacon(a) + ",crssi:" + TinyIBeaconPacket.getCalibratedRSSIAsIBeacon(a));
                     TinyBeaconInfo i = TinyBeaconInfo.containes(mParent.mFoundIBeacon, a);
-                    if(null == i) {
+                    if (null == i) {
                         TinyBeaconInfo ex = new TinyBeaconInfo(a, result.getRssi(), t);
                         mParent.mFoundIBeacon.add(ex);
                     } else {

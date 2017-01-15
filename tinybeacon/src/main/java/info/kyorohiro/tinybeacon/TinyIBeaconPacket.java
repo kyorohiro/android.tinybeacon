@@ -1,6 +1,9 @@
 package info.kyorohiro.tinybeacon;
 
+import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Created by kyorohiro on 2016/02/16.
@@ -53,6 +56,33 @@ public class TinyIBeaconPacket {
     }
 
     //
+    // TODO create iBeacon class & functionry method
+    //
+    static byte[] makeIBeaconAdvertiseData(byte[] uuid, int major, int minor, int txPower) {
+        byte[] cont = new byte[0x1a-2];
+
+        //
+        // 004c is apple
+        cont[0] = 0x4C;
+        cont[1] = 0x00;
+        // indicator
+        cont[2] = 0x02;
+        cont[3] = 0x15;
+        // uuid
+        System.arraycopy(uuid,0,cont,4,16);
+        //
+        //major
+        ByteBuffer majorBuffer = ByteBuffer.allocate(2).putShort((short)major);
+        cont[20] = majorBuffer.get(1);
+        cont[21] = majorBuffer.get(0);
+        ByteBuffer minorBuffer = ByteBuffer.allocate(2).putShort((short)major);
+        cont[22] = minorBuffer.get(1);
+        cont[23] = minorBuffer.get(0);
+        cont[24] = (byte)txPower;
+        return cont;
+    }
+
+    //
     // RSSI = Power - 20  log10(100cm);
     // -(RSSI - Power)/20 =  log10(d);
     // 10 ^(Power -RSSI)/20 = d : d is per 100cm
@@ -83,15 +113,16 @@ public class TinyIBeaconPacket {
         return ret;
     }
 
-    static int getMinorAsIBeacon(TinyAdPacket packet) {
+    static int getMajorAsIBeacon(TinyAdPacket packet) {
         byte[] cont = packet.getContent();
         return ByteBuffer.wrap(cont,20,2).getShort();
     }
 
-    static int getMajorAsIBeacon(TinyAdPacket packet) {
+    static int getMinorAsIBeacon(TinyAdPacket packet) {
         byte[] cont = packet.getContent();
         return ByteBuffer.wrap(cont,22,2).getShort();
     }
+
 
     static int getCalibratedRSSIAsIBeacon(TinyAdPacket packet) {
         return packet.getContent()[24];

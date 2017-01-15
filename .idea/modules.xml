@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/android.tinybeacon.iml" filepath="$PROJECT_DIR$/android.tinybeacon.iml" />
+      <module fileurl="file://$PROJECT_DIR$/testrun/testrun.iml" filepath="$PROJECT_DIR$/testrun/testrun.iml" />
       <module fileurl="file://$PROJECT_DIR$/tinybeacon/tinybeacon.iml" filepath="$PROJECT_DIR$/tinybeacon/tinybeacon.iml" />
     </modules>
   </component>
