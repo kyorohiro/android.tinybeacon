@@ -12,7 +12,7 @@ import static org.junit.Assert.*;
 public class ExampleUnitTest {
     @Test
     public void addition_isCorrect() throws Exception {
-      //  byte[] v = TinyIBeaconPacket.getUUIDBytesAsIBeacon("AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE");
-      //  assertEquals("aaaaaaaabbbbccccddddeeeeeeeeeeee", TinyIBeaconPacket.getUUIDHexStringAsIBeacon(v));
+      //  byte[] v = TinyIBeaconPacket.createUUIDBytes("AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE");
+      //  assertEquals("aaaaaaaabbbbccccddddeeeeeeeeeeee", TinyIBeaconPacket.getUUIDHexString(v));
     }
 }

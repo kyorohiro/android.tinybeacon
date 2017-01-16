@@ -1,9 +1,6 @@
 package info.kyorohiro.tinybeacon;
 
-import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -135,11 +132,11 @@ public class TinyIBeaconPacket {
         return packet.getContent()[24];
     }
 
-    static public String getUUIDHexStringAsIBeacon(TinyAdPacket packet) {
-        return getUUIDHexStringAsIBeacon(getUUIDAsIBeacon(packet));
+    static public String getUUIDHexString(TinyAdPacket packet) {
+        return createUUIDHexString(getUUIDAsIBeacon(packet));
     }
 
-    static public String getUUIDHexStringAsIBeacon(byte[] cont) {
+    static public String createUUIDHexString(byte[] cont) {
         StringBuilder builder = new StringBuilder();
         for(byte c : cont) {
             if(0xF < (c&0xff)) {
@@ -152,7 +149,7 @@ public class TinyIBeaconPacket {
         return builder.toString();
     }
 
-    static public byte[] getUUIDBytesAsIBeacon(String uuid) {
+    static public byte[] createUUIDBytes(String uuid) {
         byte[] ret = new byte[16];
         StringBuilder builder = new StringBuilder();
         for(int i=0,j=0;j<uuid.length()&& i<ret.length;) {

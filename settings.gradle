@@ -1,1 +1,1 @@
-include ':tinybeacon', ':testrun'
+include ':tinybeacon'

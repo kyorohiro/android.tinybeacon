@@ -6,14 +6,14 @@ import org.json.JSONObject;
 //
 //
 //
-class TinyBeaconInfo {
+class TinyIBeaconInfo {
     double smartRssi;
     int rssi;
     long time;
     TinyAdPacket packet;
     int proximity;
 
-    TinyBeaconInfo(TinyAdPacket _packet, int _rssi, long _time) {
+    public TinyIBeaconInfo(TinyAdPacket _packet, int _rssi, long _time) {
         this.rssi = _rssi;
         this.time = _time;
         this.packet = _packet;
@@ -21,7 +21,7 @@ class TinyBeaconInfo {
         this.proximity = TinyIBeaconPacket.getProximity(packet, smartRssi, 0);
     }
 
-    void update(int _rssi, long _time) {
+    public void update(int _rssi, long _time) {
         if(_time-time > 10) {
             smartRssi = _rssi;
         } else {
@@ -36,9 +36,9 @@ class TinyBeaconInfo {
         return System.currentTimeMillis()/1000;
     }
 
-    JSONObject toJsonString() throws JSONException {
+    public JSONObject toJsonString() throws JSONException {
         JSONObject ret = new JSONObject();
-        ret.put("uuid", TinyIBeaconPacket.getUUIDHexStringAsIBeacon(packet));
+        ret.put("uuid", TinyIBeaconPacket.getUUIDHexString(packet));
         ret.put("major", TinyIBeaconPacket.getMajorAsIBeacon(packet));
         ret.put("minor", TinyIBeaconPacket.getMinorAsIBeacon(packet));
         ret.put("calrssi", TinyIBeaconPacket.getCalibratedRSSIAsIBeacon(packet));
@@ -49,7 +49,7 @@ class TinyBeaconInfo {
         return ret;
     }
 
-    String getProximityString() {
+    public String getProximityString() {
         switch (proximity) {
             case TinyIBeaconPacket.PROXIMITY_NONE:
                 return "none";
@@ -65,8 +65,8 @@ class TinyBeaconInfo {
         return "none";
     }
 
-    static TinyBeaconInfo containes(java.util.List<TinyBeaconInfo> list, TinyAdPacket packet) {
-        for(TinyBeaconInfo i : list) {
+    static TinyIBeaconInfo containes(java.util.List<TinyIBeaconInfo> list, TinyAdPacket packet) {
+        for(TinyIBeaconInfo i : list) {
             if(packet.equals(i.packet)) {
                 return i;
             }
@@ -76,8 +76,8 @@ class TinyBeaconInfo {
 
     @Override
     public boolean equals(Object o) {
-        if(o instanceof TinyBeaconInfo) {
-            o = ((TinyBeaconInfo) o).packet;
+        if(o instanceof TinyIBeaconInfo) {
+            o = ((TinyIBeaconInfo) o).packet;
         }
         return packet.equals(o);
     }

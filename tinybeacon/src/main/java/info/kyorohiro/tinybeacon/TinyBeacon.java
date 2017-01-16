@@ -3,7 +3,6 @@ package info.kyorohiro.tinybeacon;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
-import android.bluetooth.le.AdvertiseCallback;
 import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertiseSettings;
 import android.bluetooth.le.BluetoothLeAdvertiser;
@@ -14,7 +13,6 @@ import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -24,7 +22,7 @@ import org.json.JSONObject;
 
 public class TinyBeacon {
 
-    private List<TinyBeaconInfo> mFoundIBeacon = new LinkedList<TinyBeaconInfo>();
+    private List<TinyIBeaconInfo> mFoundIBeacon = new LinkedList<TinyIBeaconInfo>();
     private ScanCallback mCurrentScanCallback = null;
     private BluetoothManager mBluetoothManager = null;
     private BluetoothLeScanner mScanner = null;
@@ -43,7 +41,7 @@ public class TinyBeacon {
         void onStartSuccess(AdvertiseCallbackParam param);
     }
 
-    public void startAdvertise(Context context, byte[] uuid, int major, int minor, int txPower, final AdvertiseCallback callback) throws Exception {
+    public synchronized void startAdvertiseIBeacon(Context context, byte[] uuid, int major, int minor, int txPower, final AdvertiseCallback callback) throws Exception {
         if (mAdvertiser != null && mAdvertiserCallback != null) {
             throw new Exception("already run");
         }
@@ -54,10 +52,7 @@ public class TinyBeacon {
         AdvertiseData.Builder dataBuilder = new AdvertiseData.Builder();
         dataBuilder.setIncludeTxPowerLevel(false);
         dataBuilder.setIncludeDeviceName(false);
-        dataBuilder.addManufacturerData(
-                //TinyAdPacket.ADTYPE_MANUFACTURE_SPECIFIC,
-                0x4c,
-                TinyIBeaconPacket.makeIBeaconAdvertiseData(uuid, major, minor, txPower));
+        dataBuilder.addManufacturerData(0x4c, TinyIBeaconPacket.makeIBeaconAdvertiseData(uuid, major, minor, txPower));
 
         try {
             mAdvertiser.startAdvertising(builder.build(), dataBuilder.build(), mAdvertiserCallback = new android.bluetooth.le.AdvertiseCallback() {
@@ -78,7 +73,7 @@ public class TinyBeacon {
         }
     }
 
-    public void stopAdvertise() {
+    public synchronized void stopAdvertiseIBeacon() {
         BluetoothLeAdvertiser _advertiser = mAdvertiser;
         android.bluetooth.le.AdvertiseCallback _advertiserCallback = mAdvertiserCallback;
         mAdvertiser = null;
@@ -92,7 +87,7 @@ public class TinyBeacon {
     // --
     // Scanner
     // --
-    public void startLescan(Context context) {
+    public synchronized void startLescan(Context context) {
         if (mCurrentScanCallback != null) {
             return;
         }
@@ -118,29 +113,32 @@ public class TinyBeacon {
 
     }
 
-    public void stopLescan() {
-        if (mCurrentScanCallback != null) {
-            mScanner.stopScan(mCurrentScanCallback);
-            mCurrentScanCallback = null;
+    public synchronized void stopLescan() {
+        BluetoothLeScanner _scanner = mScanner;
+        ScanCallback _callback = mCurrentScanCallback;
+        mScanner = null;
+        mCurrentScanCallback = null;
+        if (_callback != null) {
+            _scanner.stopScan(_callback);
         }
     }
 
-    public List<TinyBeaconInfo> getFoundedBeeacon() {
+    public List<TinyIBeaconInfo> getFoundedIBeacon() {
         return mFoundIBeacon;
     }
 
-    public String getFoundedBeeaconAsJSONText() throws JSONException {
+    public String getFoundedIBeaconAsJSONText() throws JSONException {
         JSONObject ret = new JSONObject();
         List<JSONObject> t = new LinkedList<JSONObject>();
-        for (TinyBeaconInfo e : mFoundIBeacon) {
+        for (TinyIBeaconInfo e : mFoundIBeacon) {
             t.add(e.toJsonString());
         }
         ret.put("founded", new JSONArray(t));
-        ret.put("time", TinyBeaconInfo.getTime());
+        ret.put("time", TinyIBeaconInfo.getTime());
         return ret.toString();
     }
 
-    public void clearFoundedBeeacon() throws JSONException {
+    public void clearFoundedIBeacon() throws JSONException {
         mFoundIBeacon.clear();
     }
 
@@ -161,14 +159,14 @@ public class TinyBeacon {
             //android.util.Log.v("beacon", "###SA## manu:" + result.getDevice().getType());
             //android.util.Log.v("beacon", "###SA## manu:" +result.getScanRecord().getManufacturerSpecificData());
             //android.util.Log.v("beacon", "###SA## scanResult type:" + callbackType + " ,result: " + result.toString());
-            long t = TinyBeaconInfo.getTime();//System.currentTimeMillis();
-            List<TinyAdPacket> ad = TinyAdPacket.parse(result.getScanRecord().getBytes());
+            long t = TinyIBeaconInfo.getTime();//System.currentTimeMillis();
+            List<TinyAdPacket> ad = TinyAdPacket.parseScanRecord(result.getScanRecord().getBytes());
             for (TinyAdPacket a : ad) {
                 if (TinyIBeaconPacket.isIBeacon(a)) {
-                    //   android.util.Log.v("KY", "uuid:" + TinyIBeaconPacket.getUUIDHexStringAsIBeacon(a) + ", major:" + TinyIBeaconPacket.getMajorAsIBeacon(a) + ", minor:" + TinyIBeaconPacket.getMinorAsIBeacon(a) + ",crssi:" + TinyIBeaconPacket.getCalibratedRSSIAsIBeacon(a));
-                    TinyBeaconInfo i = TinyBeaconInfo.containes(mParent.mFoundIBeacon, a);
+                    //   android.util.Log.v("KY", "uuid:" + TinyIBeaconPacket.getUUIDHexString(a) + ", major:" + TinyIBeaconPacket.getMajorAsIBeacon(a) + ", minor:" + TinyIBeaconPacket.getMinorAsIBeacon(a) + ",crssi:" + TinyIBeaconPacket.getCalibratedRSSIAsIBeacon(a));
+                    TinyIBeaconInfo i = TinyIBeaconInfo.containes(mParent.mFoundIBeacon, a);
                     if (null == i) {
-                        TinyBeaconInfo ex = new TinyBeaconInfo(a, result.getRssi(), t);
+                        TinyIBeaconInfo ex = new TinyIBeaconInfo(a, result.getRssi(), t);
                         mParent.mFoundIBeacon.add(ex);
                     } else {
                         i.update(result.getRssi(), t);
